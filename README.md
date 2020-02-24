@@ -1,20 +1,20 @@
 # Сервис управления балансом клиентов
 Сервис работает под управлением БД postgres, где должна быть развернута БД balance:
-	psql template1 -c "create database balance"
-	psql balance < balance.sql	 
+psql template1 -c "create database balance"
+psql balance < balance.sql	 
 
 сборка:
-	cmake .
-	make
+cmake .
+make
 
 запуск:
-	./balancedaemon <порт> <строка соединения с БД>
+./balancedaemon <порт> <строка соединения с БД>
 
 например:
-	./balancedaemon 8888 dbname=balance 
+./balancedaemon 8888 dbname=balance 
 
 Сервис стартует как демон, соединяется с указанной БД и ожидает ip соединения на указанный порт.
 Приняв соединение, он ожидает одну из команд:
-	add <user_id> <сумма>      - добавить указанную сумму на счет пользователя 
-	sub <user_id> <сумма>      - списать указанную сумму со счёта пользователя 
-	quit                       - завершить работу демона 
+add <user_id> <сумма>      - добавить указанную сумму на счет пользователя 
+sub <user_id> <сумма>      - списать указанную сумму со счёта пользователя 
+quit                       - завершить работу демона 
