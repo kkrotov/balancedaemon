@@ -1,6 +1,11 @@
 #!/bin/bash
 echo "Starting daemon ..."
 ./balancedaemon 8888 dbname=balance
+if [ $? -ne 0 ]
+then
+	echo "Error startin daemon"
+	exit 1
+fi
 
 echo "Testing add balance operation ..."
 RES=`echo "add ivanov 10" | netcat localhost 8888`

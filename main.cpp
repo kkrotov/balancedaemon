@@ -56,7 +56,7 @@ void HandleConnection(const int slave)
         WriteToSocket(slave, res? "OK":"ERROR");
     } else
     if (command[0] == "quit\n") {
-        WriteToSocket(slave, "QUIT");
+        WriteToSocket(slave, "OK");
         gGracefulShutdown = 1;
     }
     else
@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
         exit(1);
 
     int port = atoi(argv[1]);
+    const char *conninfo = argv[2];
 
     daemonize();
     syslog (LOG_NOTICE, "balancedaemon started.");
@@ -92,7 +93,6 @@ int main(int argc, char *argv[])
         syslog(LOG_ERR, "BindPassiveSocket failed, errno=%d", errno);
         exit(-1);
     }
-    const char *conninfo = argv[2];
     int res;
     g_lpPgconn = PQconnectdb(conninfo);
     if (PQstatus(g_lpPgconn) == CONNECTION_OK) {
