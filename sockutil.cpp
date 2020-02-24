@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 #include <cstring>
 
-bool BindPassiveSocket(const int portNum, int *boundSocket)
+int BindPassiveSocket(const int portNum)
 {
     struct sockaddr_in sin;
     int   newsock, optval;
@@ -20,19 +20,18 @@ bool BindPassiveSocket(const int portNum, int *boundSocket)
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = htonl(INADDR_ANY);
     if((newsock= socket(PF_INET, SOCK_STREAM, 0))<0)
-        return false;
+        return -1;
 
     optval = 1;
     optlen = sizeof(int);
     setsockopt(newsock, SOL_SOCKET, SO_REUSEADDR, &optval, optlen);
     if(bind(newsock, (struct sockaddr*) &sin, sizeof(struct sockaddr_in))<0)
-        return false;
+        return -1;
 
     if(listen(newsock,SOMAXCONN)<0)
-        return false;
+        return -1;
 
-    *boundSocket = newsock;
-    return true;
+    return newsock;
 }
 
 std::string ReadCommand (int sock)

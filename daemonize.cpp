@@ -1,7 +1,6 @@
 //
 // Created by kkrotov on 21.02.2020.
 //
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
@@ -9,7 +8,7 @@
 #include <sys/stat.h>
 #include <syslog.h>
 
-static void daemonize()
+void daemonize()
 {
     pid_t pid;
 

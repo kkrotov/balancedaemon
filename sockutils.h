@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-bool BindPassiveSocket(const int portNum, int *boundSocket);
+int BindPassiveSocket(const int portNum);
 std::string ReadCommand (int sock);
 void WriteToSocket (int sock, std::string line);
 int WaitConnection (const int master);

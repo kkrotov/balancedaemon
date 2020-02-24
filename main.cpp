@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
@@ -10,7 +9,7 @@
 #include <iostream>
 #include <thread>
 #include "sockutils.h"
-static void daemonize();
+void daemonize();
 
 volatile sig_atomic_t   gGracefulShutdown=0;
 PGconn *g_lpPgconn;
@@ -27,18 +26,21 @@ std::vector<std::string> split(std::string commandline, char delimeter)
     return words;
 }
 
-bool add (std::string userid, std::string amount) {
+bool add (std::string userid, std::string amount)
+{
     std::string query = "select increment_balance('"+userid+"'::text, ("+amount+")::money);";
     PGresult *res = PQexec(g_lpPgconn, query.c_str());
     ExecStatusType stat = PQresultStatus(res);
     return stat != PGRES_FATAL_ERROR;
 }
 
-bool sub (std::string userid, std::string amount) {
+bool sub (std::string userid, std::string amount)
+{
     return add(userid, "-"+amount);
 }
 
-void HandleConnection(const int slave) {
+void HandleConnection(const int slave)
+{
     std::string commandline = ReadCommand(slave);
     if (commandline.length() == 0) {
         close(slave);
@@ -46,18 +48,12 @@ void HandleConnection(const int slave) {
     }
     std::vector<std::string> command = split(commandline, ' ');
     if (command[0] == "add") {
-        if (add(command[1], command[2]))
-            WriteToSocket(slave, "OK");
-        else {
-            WriteToSocket(slave, "ERROR");
-        }
+        bool res = add(command[1], command[2]);
+        WriteToSocket(slave, res? "OK":"ERROR");
     } else
     if (command[0] == "sub") {
-        if (sub(command[1], command[2]))
-            WriteToSocket(slave, "OK");
-        else {
-            WriteToSocket(slave, "ERROR");
-        }
+        bool res = sub(command[1], command[2]);
+        WriteToSocket(slave, res? "OK":"ERROR");
     } else
     if (command[0] == "quit\n") {
         WriteToSocket(slave, "QUIT");
@@ -88,13 +84,12 @@ int main(int argc, char *argv[])
 
     int port = atoi(argv[1]);
 
-    //daemonize();
-    // echo quit | netcat localhost 8888
+    daemonize();
     syslog (LOG_NOTICE, "balancedaemon started.");
 
-    int masterSocket=-1;
-    if(!BindPassiveSocket(port, &masterSocket)) {
-        syslog(LOG_INFO, "BindPassiveSocket failed, errno=%d", errno);
+    int masterSocket = BindPassiveSocket(port);
+    if(masterSocket<0) {
+        syslog(LOG_ERR, "BindPassiveSocket failed, errno=%d", errno);
         exit(-1);
     }
     const char *conninfo = argv[2];
@@ -106,7 +101,7 @@ int main(int argc, char *argv[])
     }
     else {
         syslog(LOG_ERR,"Connection to database failed: %s", PQerrorMessage(g_lpPgconn));
-        res = -1;
+        res = EXIT_FAILURE;
     }
     syslog (LOG_NOTICE, "balancedaemon terminated.");
     closelog();
