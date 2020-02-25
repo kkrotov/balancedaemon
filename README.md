@@ -1,7 +1,6 @@
 # Сервис управления балансом клиентов
 Сервис работает под управлением БД postgres, где должна быть развернута БД balance:
-> psql template1 -c "create database balance"  
-> psql balance < balance.sql	 
+> ./install_db balance <имя_пользователя_бд>
 
 сборка:
 > cmake .  
@@ -23,4 +22,4 @@
 > quit                       
 
 Тестирование собранного сервиса:
-> ./test.sh
+> ./test.sh balance 

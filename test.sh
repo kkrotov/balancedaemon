@@ -1,9 +1,9 @@
 #!/bin/bash
 echo "Starting daemon ..."
-./balancedaemon 8888 dbname=balance
+./balancedaemon 8888 dbname=$1 
 if [ $? -ne 0 ]
 then
-	echo "Error startin daemon"
+	echo "Error starting daemon"
 	exit 1
 fi
 
