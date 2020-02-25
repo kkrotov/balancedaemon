@@ -23,7 +23,10 @@ public:
         close (masterSocket);
         PQfinish(g_lpPgconn);
     }
-    void shutdown () { gGracefulShutdown=1;}
+    void shutdown () {
+        gGracefulShutdown=1;
+        sleep(1);
+    }
     bool init(int port, std::string conninfo) {
         openlog ("balancedaemon", LOG_PID, LOG_DAEMON);
         syslog (LOG_NOTICE, "balancedaemon started.");
