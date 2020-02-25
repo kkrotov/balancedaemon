@@ -17,7 +17,9 @@ class CBalanceService
     int masterSocket;
 
 public:
-    CBalanceService() : gGracefulShutdown(0) {}
+    CBalanceService() : gGracefulShutdown(0),masterSocket(-1),g_lpPgconn(0) {
+        openlog ("balancedaemon", LOG_PID, LOG_DAEMON);
+    }
     ~CBalanceService() {
         closelog();
         close (masterSocket);
@@ -28,7 +30,6 @@ public:
         sleep(1);
     }
     bool init(int port, std::string conninfo) {
-        openlog ("balancedaemon", LOG_PID, LOG_DAEMON);
         syslog (LOG_NOTICE, "balancedaemon started.");
 
         masterSocket = BindPassiveSocket(port);
