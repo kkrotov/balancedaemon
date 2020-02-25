@@ -41,7 +41,7 @@ CREATE FUNCTION public.decrement_balance(name text, val money) RETURNS money
 end;$$;
 
 
-ALTER FUNCTION public.decrement_balance(name text, val money) OWNER TO kkrotov;
+-- ALTER FUNCTION public.decrement_balance(name text, val money) OWNER TO kkrotov;
 
 --
 -- Name: increment_balance(text, money); Type: FUNCTION; Schema: public; Owner: kkrotov
@@ -55,7 +55,7 @@ CREATE FUNCTION public.increment_balance(name text, val money) RETURNS money
 end;$$;
 
 
-ALTER FUNCTION public.increment_balance(name text, val money) OWNER TO kkrotov;
+-- ALTER FUNCTION public.increment_balance(name text, val money) OWNER TO kkrotov;
 
 --
 -- Name: log_balance_changes(); Type: FUNCTION; Schema: public; Owner: kkrotov
@@ -84,7 +84,7 @@ END;
 $$;
 
 
-ALTER FUNCTION public.log_balance_changes() OWNER TO kkrotov;
+-- ALTER FUNCTION public.log_balance_changes() OWNER TO kkrotov;
 
 SET default_tablespace = '';
 
@@ -102,7 +102,7 @@ CREATE TABLE public.operationlog (
 );
 
 
-ALTER TABLE public.operationlog OWNER TO kkrotov;
+-- ALTER TABLE public.operationlog OWNER TO kkrotov;
 
 --
 -- Name: userbalance; Type: TABLE; Schema: public; Owner: kkrotov
@@ -116,7 +116,7 @@ CREATE TABLE public.userbalance (
 );
 
 
-ALTER TABLE public.userbalance OWNER TO kkrotov;
+-- ALTER TABLE public.userbalance OWNER TO kkrotov;
 
 --
 -- Name: userbalance_id_seq; Type: SEQUENCE; Schema: public; Owner: kkrotov
@@ -130,7 +130,7 @@ CREATE SEQUENCE public.userbalance_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.userbalance_id_seq OWNER TO kkrotov;
+-- ALTER TABLE public.userbalance_id_seq OWNER TO kkrotov;
 
 --
 -- Name: userbalance_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: kkrotov
