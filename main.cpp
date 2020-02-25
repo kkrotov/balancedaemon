@@ -1,18 +1,8 @@
-#include <stdlib.h>
-#include <unistd.h>
-#include <signal.h>
-#include <syslog.h>
 #include <string>
 #include <vector>
 #include <sstream>
-#include <libpq-fe.h>
-#include <iostream>
-#include <thread>
-#include "sockutils.h"
+#include "balanceservice.h"
 void daemonize();
-
-volatile sig_atomic_t   gGracefulShutdown=0;
-PGconn *g_lpPgconn;
 
 std::vector<std::string> split(std::string commandline, char delimeter)
 {
@@ -26,20 +16,7 @@ std::vector<std::string> split(std::string commandline, char delimeter)
     return words;
 }
 
-bool add (std::string userid, std::string amount)
-{
-    std::string query = "select increment_balance('"+userid+"'::text, ("+amount+")::money);";
-    PGresult *res = PQexec(g_lpPgconn, query.c_str());
-    ExecStatusType stat = PQresultStatus(res);
-    return stat != PGRES_FATAL_ERROR;
-}
-
-bool sub (std::string userid, std::string amount)
-{
-    return add(userid, "-"+amount);
-}
-
-void HandleConnection(const int slave)
+void HandleConnectionThread(const int slave, CBalanceService *lpService)
 {
     std::string commandline = ReadCommand(slave);
     if (commandline.length() == 0) {
@@ -48,16 +25,16 @@ void HandleConnection(const int slave)
     }
     std::vector<std::string> command = split(commandline, ' ');
     if (command[0] == "add") {
-        bool res = add(command[1], command[2]);
+        bool res = lpService->add(command[1], command[2]);
         WriteToSocket(slave, res? "OK":"ERROR");
     } else
     if (command[0] == "sub") {
-        bool res = sub(command[1], command[2]);
+        bool res = lpService->sub(command[1], command[2]);
         WriteToSocket(slave, res? "OK":"ERROR");
     } else
     if (command[0] == "quit\n") {
         WriteToSocket(slave, "OK");
-        gGracefulShutdown = 1;
+        lpService->shutdown();
     }
     else
         WriteToSocket(slave, "ERROR");
@@ -65,48 +42,20 @@ void HandleConnection(const int slave)
     close(slave);
 }
 
-void AcceptConnections(const int master)
-{
-    while(!gGracefulShutdown) {
-        int slave = WaitConnection(master);
-        if (slave<=0)
-            continue;
-
-        std::thread t(HandleConnection, slave);
-        t.detach();
-    }
-}
-
 int main(int argc, char *argv[])
 {
     if (argc < 3)
         exit(1);
 
+    daemonize();
+
     int port = atoi(argv[1]);
     const char *conninfo = argv[2];
 
-    daemonize();
-    syslog (LOG_NOTICE, "balancedaemon started.");
+    CBalanceService service;
+    if (!service.init(port, conninfo))
+        return EXIT_FAILURE;
 
-    int masterSocket = BindPassiveSocket(port);
-    if(masterSocket<0) {
-        syslog(LOG_ERR, "BindPassiveSocket failed, errno=%d", errno);
-        exit(-1);
-    }
-    int res;
-    g_lpPgconn = PQconnectdb(conninfo);
-    if (PQstatus(g_lpPgconn) == CONNECTION_OK) {
-        AcceptConnections(masterSocket);
-        res = EXIT_SUCCESS;
-    }
-    else {
-        syslog(LOG_ERR,"Connection to database failed: %s", PQerrorMessage(g_lpPgconn));
-        res = EXIT_FAILURE;
-    }
-    syslog (LOG_NOTICE, "balancedaemon terminated.");
-    closelog();
-    close (masterSocket);
-    PQfinish(g_lpPgconn);
-
-    return res;
+    service.run();
+    return EXIT_SUCCESS;
 }

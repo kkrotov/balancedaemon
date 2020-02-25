@@ -56,7 +56,4 @@ void daemonize()
     {
         close (x);
     }
-
-    /* Open connection to system logger */
-    openlog ("balancedaemon", LOG_PID, LOG_DAEMON);
 }

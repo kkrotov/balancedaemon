@@ -3,7 +3,7 @@ project(balancedaemon)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(balancedaemon main.cpp daemonize.cpp sockutil.cpp sockutils.h)
+add_executable(balancedaemon main.cpp daemonize.cpp sockutil.cpp sockutils.h balanceservice.h)
 
 find_package(PostgreSQL REQUIRED)
 find_package(Threads REQUIRED)
