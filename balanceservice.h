@@ -5,10 +5,10 @@
 #include <signal.h>
 #include <libpq-fe.h>
 #include <thread>
+#include <sstream>
 #include "sockutils.h"
 
 class CBalanceService;
-void HandleConnectionThread(const int slave, CBalanceService *lpService);
 
 class CBalanceService
 {
@@ -50,7 +50,7 @@ public:
             if (slave<=0)
                 continue;
 
-            std::thread t(HandleConnectionThread, slave, this);
+            std::thread t(&CBalanceService::HandleConnectionThread, this, slave);
             t.detach();
         }
         syslog (LOG_NOTICE, "balancedaemon terminated.");
@@ -65,5 +65,41 @@ public:
     bool sub (std::string userid, std::string amount)
     {
         return add(userid, "-"+amount);
+    }
+    void HandleConnectionThread(const int slave)
+    {
+        std::string commandline = ReadCommand(slave);
+        if (commandline.length() == 0) {
+            close(slave);
+            return;
+        }
+        std::vector<std::string> command = split(commandline, ' ');
+        if (command[0] == "add") {
+            bool res = add(command[1], command[2]);
+            WriteToSocket(slave, res? "OK":"ERROR");
+        } else
+        if (command[0] == "sub") {
+            bool res = sub(command[1], command[2]);
+            WriteToSocket(slave, res? "OK":"ERROR");
+        } else
+        if (command[0] == "quit\n") {
+            WriteToSocket(slave, "OK");
+            shutdown();
+        }
+        else
+            WriteToSocket(slave, "ERROR");
+
+        close(slave);
+    }
+    std::vector<std::string> split(std::string commandline, char delimeter)
+    {
+        std::stringstream ss(commandline);
+        std::string item;
+        std::vector<std::string> words;
+        while (std::getline(ss, item, delimeter)) {
+            if (item.length())
+                words.push_back(item);
+        }
+        return words;
     }
 };
