@@ -30,6 +30,18 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
 --
+-- Name: optype; Type: TYPE; Schema: public; Owner: kkrotov
+--
+
+CREATE TYPE public.optype AS ENUM (
+    'increment',
+    'decrement'
+);
+
+
+-- ALTER TYPE public.optype OWNER TO kkrotov;
+
+--
 -- Name: decrement_balance(text, money); Type: FUNCTION; Schema: public; Owner: kkrotov
 --
 
@@ -41,7 +53,7 @@ CREATE FUNCTION public.decrement_balance(name text, val money) RETURNS money
 end;$$;
 
 
--- ALTER FUNCTION public.decrement_balance(name text, val money) OWNER TO kkrotov;
+--ALTER FUNCTION public.decrement_balance(name text, val money) OWNER TO kkrotov;
 
 --
 -- Name: increment_balance(text, money); Type: FUNCTION; Schema: public; Owner: kkrotov
@@ -55,7 +67,7 @@ CREATE FUNCTION public.increment_balance(name text, val money) RETURNS money
 end;$$;
 
 
--- ALTER FUNCTION public.increment_balance(name text, val money) OWNER TO kkrotov;
+--ALTER FUNCTION public.increment_balance(name text, val money) OWNER TO kkrotov;
 
 --
 -- Name: log_balance_changes(); Type: FUNCTION; Schema: public; Owner: kkrotov
@@ -65,26 +77,26 @@ CREATE FUNCTION public.log_balance_changes() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    optype boolean;
+    opertype varchar;
     amount_change money;
 BEGIN
    IF NEW.amount < OLD.amount THEN
-        optype := false;
+        opertype := 'decrement';
         amount_change := OLD.amount - NEW.amount;
    ELSE
-        optype := true;
+        opertype := 'increment';
         amount_change := NEW.amount - OLD.amount;
    END IF;
 
    INSERT INTO operationlog(userid,datetime,operationtype,amount)
-   VALUES (NEW.id, now(), optype, amount_change);
+   VALUES (NEW.id, now(), opertype::optype, amount_change);
  
    RETURN NEW;
 END;
 $$;
 
 
--- ALTER FUNCTION public.log_balance_changes() OWNER TO kkrotov;
+--ALTER FUNCTION public.log_balance_changes() OWNER TO kkrotov;
 
 SET default_tablespace = '';
 
@@ -95,14 +107,36 @@ SET default_with_oids = false;
 --
 
 CREATE TABLE public.operationlog (
+    id integer NOT NULL,
     userid integer,
     datetime timestamp with time zone DEFAULT now(),
-    operationtype boolean,
+    operationtype public.optype,
     amount money
 );
 
 
--- ALTER TABLE public.operationlog OWNER TO kkrotov;
+--ALTER TABLE public.operationlog OWNER TO kkrotov;
+
+--
+-- Name: operationlog2_id_seq; Type: SEQUENCE; Schema: public; Owner: kkrotov
+--
+
+CREATE SEQUENCE public.operationlog2_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--ALTER TABLE public.operationlog2_id_seq OWNER TO kkrotov;
+
+--
+-- Name: operationlog2_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: kkrotov
+--
+
+ALTER SEQUENCE public.operationlog2_id_seq OWNED BY public.operationlog.id;
+
 
 --
 -- Name: userbalance; Type: TABLE; Schema: public; Owner: kkrotov
@@ -116,7 +150,7 @@ CREATE TABLE public.userbalance (
 );
 
 
--- ALTER TABLE public.userbalance OWNER TO kkrotov;
+--ALTER TABLE public.userbalance OWNER TO kkrotov;
 
 --
 -- Name: userbalance_id_seq; Type: SEQUENCE; Schema: public; Owner: kkrotov
@@ -130,7 +164,7 @@ CREATE SEQUENCE public.userbalance_id_seq
     CACHE 1;
 
 
--- ALTER TABLE public.userbalance_id_seq OWNER TO kkrotov;
+--ALTER TABLE public.userbalance_id_seq OWNER TO kkrotov;
 
 --
 -- Name: userbalance_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: kkrotov
@@ -143,15 +177,21 @@ ALTER SEQUENCE public.userbalance_id_seq OWNED BY public.userbalance.id;
 -- Name: id; Type: DEFAULT; Schema: public; Owner: kkrotov
 --
 
+ALTER TABLE ONLY public.operationlog ALTER COLUMN id SET DEFAULT nextval('public.operationlog2_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: kkrotov
+--
+
 ALTER TABLE ONLY public.userbalance ALTER COLUMN id SET DEFAULT nextval('public.userbalance_id_seq'::regclass);
 
 
 --
--- Data for Name: operationlog; Type: TABLE DATA; Schema: public; Owner: kkrotov
+-- Name: operationlog2_id_seq; Type: SEQUENCE SET; Schema: public; Owner: kkrotov
 --
 
-COPY public.operationlog (userid, datetime, operationtype, amount) FROM stdin;
-\.
+SELECT pg_catalog.setval('public.operationlog2_id_seq', 4, true);
 
 
 --
@@ -160,8 +200,8 @@ COPY public.operationlog (userid, datetime, operationtype, amount) FROM stdin;
 
 COPY public.userbalance (id, username, amount) FROM stdin;
 3	smirnov	0.00 руб
-1	ivanov	0.00 руб
 2	petrov	0.00 руб
+1	ivanov	0.00 руб
 \.
 
 
